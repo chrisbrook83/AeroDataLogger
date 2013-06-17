@@ -1,11 +1,10 @@
-
 namespace ExampleAccelGyroSensor.Sensor
 {
     /// <summary>
     /// See: http://www.i2cdevlib.com/devices/mpu6050#registers
     /// Also: http://arduino.cc/playground/Main/MPU-6050
     /// </summary>
-    public static class MPU6050_Registers
+    public static class MPU6050Registers
     {
         public static byte I2C_ADDRESS = 0x69;      // AD0 = 1 (vs 0x68,1101000 for AD0 = 0) - pull up V setting
 
