@@ -42,17 +42,17 @@ namespace ExampleAccelGyroSensor.Sensor
             // PWR_MGMT_1 = Power Management 1 (11111001)
             // 0xF9 = Device Reset (1), Sleep (1), Cycle (1), nichts (1), Temperatur (1), Taktquelle festlegen (001)
             CheckErrorStatus(_I2C.Write(new byte[] { MPU6050_Registers.PWR_MGMT_1, 0xF9 }));
-            
+
+            // Exit sleep mode (CARE! Not sure why, but this resets the device - run all config after this)
+            CheckErrorStatus(_I2C.Write(new byte[] { MPU6050_Registers.PWR_MGMT_1, 0x01 }));
+
             // FullScaleGyroRange
-            _gyroRange = GyroConfig.Range.plusMinus2000dps;
+            _gyroRange = GyroConfig.Range.plusMinus0500dps;
             CheckErrorStatus(_I2C.Write(new byte[] { MPU6050_Registers.GYRO_CONFIG, GyroConfig.Build(_gyroRange) })); 
             
             // FullScaleAccelRange
-            _accelRange = AccelConfig.Range.plusMinus16G;
+            _accelRange = AccelConfig.Range.plusMinus08G;
             CheckErrorStatus(_I2C.Write(new byte[] { MPU6050_Registers.ACCEL_CONFIG, AccelConfig.Build(_accelRange) }));
-            
-            // Schlafmodus beenden
-            CheckErrorStatus(_I2C.Write(new byte[] { MPU6050_Registers.PWR_MGMT_1, 0x01 }));
         }
 
         /// <summary>
