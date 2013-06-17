@@ -2,9 +2,6 @@ using System.Text;
 using System;
 namespace ExampleAccelGyroSensor.Sensor
 {
-    /// <summary>
-    /// Objekt zum Auswerten der Ergebnisse und Bereitstellung der gemessenen Werten.
-    /// </summary>
     public struct AccelerationAndGyroData
     {
         /// <summary>
