@@ -31,6 +31,8 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
+    <Compile Include="Sensor\AccelConfig.cs" />
+    <Compile Include="Sensor\GyroConfig.cs" />
     <Compile Include="Sensor\MPU6050.cs" />
     <Compile Include="Sensor\AccelerationAndGyroData.cs" />
     <Compile Include="I2C_Hardware\I2C_Connector.cs" />

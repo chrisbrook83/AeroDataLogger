@@ -1,5 +1,7 @@
 ﻿using Microsoft.SPOT.Hardware;
 using Microsoft.SPOT;
+using System;
+using ExampleAccelGyroSensor.Sensor;
 
 namespace ExampleAccelGyroSensor.I2C_Hardware
 {
@@ -13,10 +15,12 @@ namespace ExampleAccelGyroSensor.I2C_Hardware
         /// Konfigurationen festhalten
         /// </summary>
         private I2CDevice.Configuration _Config;
+        
         /// <summary>
         /// Hauptklasse für die Verbindung
         /// </summary>
         private I2CDevice _Device;
+        
         /// <summary>
         /// Initialisiert die Klasse
         /// Konfiguration wird angelegt und
@@ -30,6 +34,7 @@ namespace ExampleAccelGyroSensor.I2C_Hardware
             _Config = new I2CDevice.Configuration(address, clockRateKHz);
             _Device = new I2CDevice(_Config);
         }
+
         /// <summary>
         /// Sendet den Inhalt des Byte Array zur Hardware
         /// </summary>
@@ -39,38 +44,46 @@ namespace ExampleAccelGyroSensor.I2C_Hardware
             // Byte Array übergeben für das ertellen einer Transaction
             I2CDevice.I2CTransaction[] writeTransaction = new I2CDevice.I2CTransaction[]
             { 
-                I2CDevice.CreateWriteTransaction(writeBuffer) 
+                I2CDevice.CreateWriteTransaction(writeBuffer)
             };
+
             // Sende die Daten an die Hardware. Timeout bei 1 Sekunde
             int written = this._Device.Execute(writeTransaction, 1000);
 
-            // Prüfe ob alle daten gesendet wurden, ansonsten Exception ausführen      
-            if (written != writeBuffer.Length)
+            // Check if all data has been sent, otherwise throw exception
+            if (written == 0)
             {
-                Debug.Print("Es konnten keine Daten an das Modul gesendet werden.");
+                // "Es konnten keine Daten an das Modul gesendet werden."
+                Debug.Print("No data could be sent to the module"); 
             }
 
             return written;
         }
+        
         /// <summary>
-        /// Ruft mit den Adressen im Buffer die Werte ab
+        /// Gets the values ​​for the addresses in the buffer  
+        /// (Ruft mit den Adressen im Buffer die Werte ab)
         /// </summary>
-        /// <param name="readBuffer">Byte Array mit Adressen für den Abruf entsprechender Daten</param>
-        public int Read(byte[] readBuffer)
+        /// <param name="readBuffer">Byte array containing addresses for retrieval of relevant data. 
+        /// (Byte Array mit Adressen für den Abruf entsprechender Daten)</param>
+        public int Read(byte register, byte[] resultBuffer)
         {
-            // Erstelle ein Transaction zum Lesen mit übergabe des Byte Array        
-            I2CDevice.I2CTransaction[] readTransaction = new I2CDevice.I2CTransaction[]
+            var transactions = new I2CDevice.I2CTransaction[]
             {
-                I2CDevice.CreateReadTransaction(readBuffer)        
+                //I2CDevice.CreateWriteTransaction(new byte[] { register }),
+                //I2CDevice.CreateReadTransaction(new byte[] { resultBuffer })
+                I2CDevice.CreateReadTransaction(resultBuffer)
             };
-            // Lese die Daten von der Hardware. Timeout von einer Sekunde     
-            int read = this._Device.Execute(readTransaction, 1000);
+            
+            // Read data from the hardware - timeout 1 sec... (Lese die Daten von der Hardware. Timeout von einer Sekunde)
+            int read = this._Device.Execute(transactions, 1000);
 
-            // Prüfe, ob die Daten gesendt wurden      
-            if (read != readBuffer.Length)
+            // Check if the data was sent... (Prüfe, ob die Daten gesendt wurden)
+            if (read == 0)
             {
-                //throw new Exception("Es konnte nicht vom Modul gelesen werden.");
-                Debug.Print("Es konnte nicht vom Modul gelesen werden.");
+                string message = "Data could not be read from the module."; //Es konnte nicht vom Modul gelesen werden.
+                //throw new Exception(message);
+                Debug.Print(message);
             }
 
             return read;
