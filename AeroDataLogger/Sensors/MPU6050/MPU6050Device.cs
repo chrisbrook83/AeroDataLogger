@@ -1,7 +1,7 @@
 using AeroDataLogger.I2C;
 using Microsoft.SPOT;
 
-namespace AeroDataLogger.MPU6050
+namespace AeroDataLogger.Sensors.MPU6050
 {
     /// <summary>
     /// Class for interfacing with MPU-6050 module.

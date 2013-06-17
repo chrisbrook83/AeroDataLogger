@@ -1,6 +1,6 @@
 using System;
 using System.Text;
-namespace AeroDataLogger.MPU6050
+namespace AeroDataLogger.Sensors.MPU6050
 {
     public struct AccelerationAndGyroData
     {

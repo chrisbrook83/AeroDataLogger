@@ -4,7 +4,7 @@
  */
 
 using System.Threading;
-using AeroDataLogger.MPU6050;
+using AeroDataLogger.Sensors.MPU6050;
 using Microsoft.SPOT;
 
 namespace AeroDataLogger

@@ -32,13 +32,13 @@
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
     <Compile Include="I2C\I2CConnector.cs" />
-    <Compile Include="MPU6050\AccelConfig.cs" />
-    <Compile Include="MPU6050\AccelerationAndGyroData.cs" />
-    <Compile Include="MPU6050\GyroConfig.cs" />
-    <Compile Include="MPU6050\MPU6050Device.cs" />
-    <Compile Include="MPU6050\MPU6050Registers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="Sensors\MPU6050\AccelConfig.cs" />
+    <Compile Include="Sensors\MPU6050\AccelerationAndGyroData.cs" />
+    <Compile Include="Sensors\MPU6050\GyroConfig.cs" />
+    <Compile Include="Sensors\MPU6050\MPU6050Device.cs" />
+    <Compile Include="Sensors\MPU6050\MPU6050Registers.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SPOT.Hardware" />

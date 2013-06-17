@@ -1,4 +1,4 @@
-namespace AeroDataLogger.MPU6050
+namespace AeroDataLogger.Sensors.MPU6050
 {
     /// <summary>
     /// See: http://www.i2cdevlib.com/devices/mpu6050#registers
