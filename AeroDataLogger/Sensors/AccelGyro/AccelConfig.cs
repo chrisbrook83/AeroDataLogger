@@ -1,4 +1,4 @@
-namespace AeroDataLogger.Sensors.MPU6050
+namespace AeroDataLogger.Sensors.AccelGyro
 {
     public class AccelConfig
     {
