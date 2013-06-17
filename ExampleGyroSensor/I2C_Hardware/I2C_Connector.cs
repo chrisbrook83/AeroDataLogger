@@ -3,36 +3,22 @@ using Microsoft.SPOT;
 using System;
 using ExampleAccelGyroSensor.Sensor;
 
-namespace ExampleAccelGyroSensor.I2C_Hardware
+namespace ExampleAccelGyroSensor.I2C.Hardware
 {
     /// <summary>
     /// Einfache Klasse zum Verbinden eines Moduls mit dem I²C Bus.
     /// Ist aus einem Beispiel im Forum von Netduino.com abgeleitet.
     /// </summary>
-    public class I2C_Connector
+    public class I2CConnector
     {
-        /// <summary>
-        /// Konfigurationen festhalten
-        /// </summary>
-        private I2CDevice.Configuration _Config;
+        private I2CDevice.Configuration _config;
         
-        /// <summary>
-        /// Hauptklasse für die Verbindung
-        /// </summary>
-        private I2CDevice _Device;
+        private I2CDevice _device;
         
-        /// <summary>
-        /// Initialisiert die Klasse
-        /// Konfiguration wird angelegt und
-        /// die entsprechende Klasse I2CDevice wird initialisiert
-        /// </summary>
-        /// <param name="address">Byte Adresse vom Modul übergeben.</param>
-        /// <param name="clockRateKHz">Taktrate in KHz festlegen</param>
-        public I2C_Connector(byte address, int clockRateKHz)
+        public I2CConnector(byte deviceAddress, int clockRateKHz)
         {
-            // Adresse und Taktfrequenz übergeben
-            _Config = new I2CDevice.Configuration(address, clockRateKHz);
-            _Device = new I2CDevice(_Config);
+            _config = new I2CDevice.Configuration(deviceAddress, clockRateKHz);
+            _device = new I2CDevice(_config);
         }
 
         /// <summary>
@@ -48,7 +34,7 @@ namespace ExampleAccelGyroSensor.I2C_Hardware
             };
 
             // Sende die Daten an die Hardware. Timeout bei 1 Sekunde
-            int written = this._Device.Execute(writeTransaction, 1000);
+            int written = this._device.Execute(writeTransaction, 1000);
 
             // Check if all data has been sent, otherwise throw exception
             if (written == 0)
@@ -76,7 +62,7 @@ namespace ExampleAccelGyroSensor.I2C_Hardware
             };
             
             // Read data from the hardware - timeout 1 sec... (Lese die Daten von der Hardware. Timeout von einer Sekunde)
-            int read = this._Device.Execute(transactions, 1000);
+            int read = this._device.Execute(transactions, 1000);
 
             // Check if the data was sent... (Prüfe, ob die Daten gesendt wurden)
             if (read == 0)

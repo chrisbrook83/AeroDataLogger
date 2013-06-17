@@ -7,10 +7,10 @@ namespace ExampleAccelGyroSensor.Sensor
     {
         public enum Range : short
         {
-            plusMinus0250Dps = 0,
-            plusMinus0500dps = 1,
-            plusMinus1000dps = 2,
-            plusMinus2000dps = 3
+            plusMinus0250Dps = 250,
+            plusMinus0500dps = 500,
+            plusMinus1000dps = 1000,
+            plusMinus2000dps = 2000
         }
 
         public static byte Build(Range Sensitivity)

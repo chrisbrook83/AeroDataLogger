@@ -1,5 +1,5 @@
 using Microsoft.SPOT;
-using ExampleAccelGyroSensor.I2C_Hardware;
+using ExampleAccelGyroSensor.I2C.Hardware;
 
 namespace ExampleAccelGyroSensor.Sensor
 {
@@ -8,7 +8,7 @@ namespace ExampleAccelGyroSensor.Sensor
         /// <summary>
         /// Klassen für die Verbindung über den I²C Bus
         /// </summary>
-        private I2C_Connector _I2C;
+        private I2CConnector _I2C;
 
         private GyroConfig.Range _gyroRange;
         private AccelConfig.Range _accelRange;
@@ -20,7 +20,7 @@ namespace ExampleAccelGyroSensor.Sensor
         {
             Debug.Print("Initialising the MPU-6050 Accelerometer and Gyro package...");
             int clockRateHz = 100;
-            _I2C = new I2C_Connector(MPU6050_Registers.I2C_ADDRESS, clockRateHz);
+            _I2C = new I2CConnector(MPU6050_Registers.I2C_ADDRESS, clockRateHz);
 
             Initialize();
 

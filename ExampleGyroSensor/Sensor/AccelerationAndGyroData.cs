@@ -70,6 +70,21 @@ namespace ExampleAccelGyroSensor.Sensor
             RawGyroZ = ToShort(results[12], results[13]);         
         }
 
+        public override string ToString()
+        {
+            var temp = ConvertValueToString(ParseTemp(RawTemperature), 2, 1);
+            var aX = ConvertValueToString(ConvertRawValueToUnits(RawAccelerationX, (short)_accelRange), 1, 3);
+            var aY = ConvertValueToString(ConvertRawValueToUnits(RawAccelerationY, (short)_accelRange), 1, 3);
+            var aZ = ConvertValueToString(ConvertRawValueToUnits(RawAccelerationZ, (short)_accelRange), 1, 3);
+            var rX = ConvertValueToString(ConvertRawValueToUnits(RawGyroX, (short)_gyroRange), 3, 1);
+            var rY = ConvertValueToString(ConvertRawValueToUnits(RawGyroY, (short)_gyroRange), 3, 1);
+            var rZ = ConvertValueToString(ConvertRawValueToUnits(RawGyroZ, (short)_gyroRange), 3, 1);
+
+            return "Temp: " + temp + "°C" + 
+                "\tAccel: " + aX + "X\t " + aY + "Y\t " + aZ + "Z" +
+                "\tGyro: " + rX + "X\t " + rY + "Y\t " + rZ + "Z";
+        }
+
         /// <summary>
         /// Reconstructs a short (signed 16-bit int) from bytes representing the high and low 8-bit blocks.
         /// </summary>
@@ -80,102 +95,49 @@ namespace ExampleAccelGyroSensor.Sensor
             return (short)((byte1 << 8) | (byte2 << 0));
         }
 
-        public override string ToString()
-        {
-            return "Temp / deg C: " + ParseTemp(RawTemperature) +
-                " \tAcceleration: X: " + GetAccelString(RawAccelerationX) + "\tY: " + GetAccelString(RawAccelerationY) + "\tZ: " + GetAccelString(RawAccelerationZ) + 
-                " \t Gyro: X: " + GetGyroRateString(RawGyroX) + "\tY: " + GetGyroRateString(RawGyroY) + "\tZ: " + GetGyroRateString(RawGyroZ);
-        }
-
-        private string GetAccelString(short value)
-        {
-            double range = 0;
-            switch (_accelRange)
-            {
-                case AccelConfig.Range.plusMinus02G:
-                    range = 2;
-                    break;
-                case AccelConfig.Range.plusMinus04G:
-                    range = 4;
-                    break;
-                case AccelConfig.Range.plusMinus08G:
-                    range = 8;
-                    break;
-                case AccelConfig.Range.plusMinus16G:
-                    range = 16;
-                    break;
-            }
-
-            double g = ((double)value * (range / (double)short.MaxValue));
-
-            string sign = g < 0 ? "" : "+";
-            return sign + g.ToString("f2"); // 2 d.p.
-        }
-
-        private string GetGyroRateString(short value)
-        {
-            double range = 0;
-            switch (_gyroRange)
-            {
-                case GyroConfig.Range.plusMinus0250Dps:
-                    range = 250;
-                    break;
-                case GyroConfig.Range.plusMinus0500dps:
-                    range = 500;
-                    break;
-                case GyroConfig.Range.plusMinus1000dps:
-                    range = 1000;
-                    break;
-                case GyroConfig.Range.plusMinus2000dps:
-                    range = 2000;
-                    break;
-            }
-
-            int dps = (int)((double)value * (range / (double)short.MaxValue));
-
-            return PadString(dps, 4);
-        }
-
-        private string PadString(int value, int paddedLength)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            // Add sign
-            if (value < 0) sb.Append("-"); else sb.Append("+");
-            
-            // Add padding zeros
-            string s = Math.Abs(value).ToString();
-            for (int i = 0; i < paddedLength - s.Length; i++)
-            {
-                sb.Append("0");
-            }
-            
-            sb.Append(s);
-            return sb.ToString();
-        }
-
         /// <summary>
-        /// Returns the value as a percentage value, to keep the number small
+        /// Scales a raw data value to actual units.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="sensorValue">The raw data value (signed 16-bit integer: -32.7k to +32.7k)</param>
+        /// <param name="maxValueInUnits">The maximum positive value on the scale.</param>
         /// <returns></returns>
-        private string GetPercentString(short value)
+        private static double ConvertRawValueToUnits(short sensorValue, short maxValueInUnits)
         {
-            double d = (double)value;
-            int result = (int)System.Math.Round((d / short.MaxValue) * 100);
-
-            return PadString(result, 3);
+            return sensorValue * ((double)maxValueInUnits / short.MaxValue);
         }
 
         /// <summary>
         /// Converts the raw temperature value to real units.
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        private int ParseTemp(short value)
+        /// <param name="value">The raw data value (signed 16-bit integer: -32.7k to +32.7k)</param>
+        /// <returns>Temp in degrees C</returns>
+        private static double ParseTemp(short value)
         {
-            int celsius = (value + 11796) / 524;
+            double celsius = (value + 11796.0) / 524.0;
             return celsius;
+        }
+
+        private static string ConvertValueToString(double value, int integerDigits, int decimalPlaces)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            // Add sign
+            string sign = value < 0 ? "-" : "+";
+            sb.Append(sign);
+
+            // Add padding zeros
+            double absValue = Math.Abs(value);
+            string integerPart = ((int)absValue).ToString();
+            for (int i = 0; i < integerDigits - integerPart.Length; i++)
+            {
+                sb.Append("0");
+            }
+            
+            // Add value (to X dp)
+            string format = "f" + decimalPlaces.ToString();
+            sb.Append(absValue.ToString(format));
+
+            return sb.ToString();
         }
     }
 }
