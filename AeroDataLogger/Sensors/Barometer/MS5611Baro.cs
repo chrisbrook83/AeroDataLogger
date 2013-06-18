@@ -2,6 +2,7 @@ using System;
 using Microsoft.SPOT;
 using AeroDataLogger.I2C;
 using System.Threading;
+using Microsoft.SPOT.Hardware;
 
 namespace AeroDataLogger.Sensors.Barometer
 {
@@ -10,57 +11,57 @@ namespace AeroDataLogger.Sensors.Barometer
     /// </summary>
     public class MS5611Baro
     {
-        private const byte I2CAddress = 0x77;
-        private I2CConnector _I2CConnector;
-        CalibrationData _calibrationData;
+        private const byte MS5611_I2C_ADDRESS = 0x77;
+        private const int I2C_TIMEOUT = 1000;
+        private const int I2C_CLOCK = 100; // kHz
+
+        private readonly I2CBus _i2cBus = I2CBus.GetInstance();
+        private readonly I2CDevice.Configuration _i2cConfig = new I2CDevice.Configuration(MS5611_I2C_ADDRESS, I2C_CLOCK);
+         
+        private CalibrationData _calibrationData;
 
         public MS5611Baro()
         {
-            _I2CConnector = new I2CConnector(I2CAddress, 100);
             Initialise();
         }
 
-
         public void ReadTemperatureAndPressure(out double temp, out double pressure)
         {
-            UInt32 d1Pres = ReadRawPressure();
-            UInt32 d2Temp = ReadRawTemperature();
-            Int32 dT = (Int32)(d2Temp - (_calibrationData.TRef * System.Math.Pow(2,8)));
-            temp = (2000 + dT * ((double)_calibrationData.TempSens / System.Math.Pow(2, 23))) / 100.0;
+            UInt32 D1 = ReadRawPressure();
+            UInt32 D2 = ReadRawTemperature();
+            Int32 dT = (Int32)(D2 - ((Int32)_calibrationData.C5_TRef << 8));
+            Debug.Assert(dT >= -16776960 && dT <= 16776960);
+            Int64 OFF = ((Int64)_calibrationData.C2_OffT1 << 16) + ((dT * _calibrationData.C4_TCO) >> 7);
+            Int64 SENS = ((Int32)_calibrationData.C1_SensT1 << 15) + ((dT * _calibrationData.C3_TCS) >> 8);
 
-            Int64 offset = (Int64)(_calibrationData.OffT1 * System.Math.Pow(2, 16) + (_calibrationData.TCO * dT) / System.Math.Pow(2, 7));
-            Int64 sens = (Int64)(_calibrationData.SensT1 * System.Math.Pow(2, 15) + (_calibrationData.TCS * dT) / System.Math.Pow(2, 8));
-            pressure = (d1Pres * sens / System.Math.Pow(2, 21) - offset) / System.Math.Pow(2, 15) / 100;
-        }
+            Int64 TEMP = 2000 + ((dT * _calibrationData.C6_TempSens) >> 23);
+            Debug.Assert(TEMP >= -4000 && TEMP <= 8500);
 
-        private UInt32 ReadRawTemperature()
-        {
-            // Temperature (D2)
-            const byte CONV_SEQ_COMMAND_D2_OSR256 = 0x50;
-            const byte CONV_SEQ_COMMAND_D2_OSR512 = 0x52;
-            const byte CONV_SEQ_COMMAND_D2_OSR1024 = 0x54;
-            const byte CONV_SEQ_COMMAND_D2_OSR2048 = 0x56;
-            const byte CONV_SEQ_COMMAND_D2_OSR4096 = 0x58;
+            //if (TEMP < 2000)
+            //{
+            //    Int32 T1 = 0;
+            //    Int64 OFF1 = 0;
+            //    Int64 SENS1 = 0;
 
-            _I2CConnector.Write(new byte[] { CONV_SEQ_COMMAND_D2_OSR256 });
-            Thread.Sleep(100);
-            UInt32 temp = this.ReadAdcValue();
-            return temp;
-        }
+            //    T1 = (Int32)(System.Math.Pow(dT, 2) / 2147483648);
+            //    OFF1 = (Int64)(5 * System.Math.Pow((TEMP - 2000), 2) / 2);
+            //    SENS1 = (Int64)(5 * System.Math.Pow((TEMP - 2000), 2) / 4);
 
-        private UInt32 ReadRawPressure()
-        {
-            // Pressure (D1)
-            const byte CONV_SEQ_COMMAND_D1_OSR256 = 0x50;
-            const byte CONV_SEQ_COMMAND_D1_OSR512 = 0x52;
-            const byte CONV_SEQ_COMMAND_D1_OSR1024 = 0x54;
-            const byte CONV_SEQ_COMMAND_D1_OSR2048 = 0x56;
-            const byte CONV_SEQ_COMMAND_D1_OSR4096 = 0x58;
+            //    if (TEMP < -1500) // if temperature lower than -15 Celsius 
+            //    {
+            //        OFF1 = (Int64)(OFF1 + 7 * System.Math.Pow((TEMP + 1500), 2));
+            //        SENS1 = (Int64)(SENS1 + 11 * System.Math.Pow((TEMP + 1500), 2) / 2);
+            //    }
 
-            _I2CConnector.Write(new byte[] { CONV_SEQ_COMMAND_D1_OSR256 });
-            Thread.Sleep(100);
-            UInt32 pressure = this.ReadAdcValue();
-            return pressure;
+            //    TEMP -= T1;
+            //    OFF -= OFF1;
+            //    SENS -= SENS1; 
+            //}
+
+            temp = (double)TEMP / 100;
+
+            Int64 P = (((D1 * SENS) >> 21) - OFF) >> 15;
+            pressure = (double)P / 100;
         }
 
         private void Initialise()
@@ -72,7 +73,8 @@ namespace AeroDataLogger.Sensors.Barometer
         private void Reset()
         {
             const byte RESET_COMMAND = 0x1E;
-            _I2CConnector.Write(new byte[] { RESET_COMMAND });
+            _i2cBus.Write(_i2cConfig, new byte[] { RESET_COMMAND }, I2C_TIMEOUT);
+            Thread.Sleep(100); // allow reset to complete
         }
 
         private void ReadCalibrationData()
@@ -94,22 +96,67 @@ namespace AeroDataLogger.Sensors.Barometer
 
             for (int i = 0; i < commands.Length; i++)
             {
-                _I2CConnector.Write(new byte[] { commands[i] });
+                //_i2cBus.Write(_i2cConfig, new byte[] { commands[i] }, I2C_TIMEOUT);
                 byte[] temp = new byte[2];
-                _I2CConnector.Read(temp);
+                //_i2cBus.Read(_i2cConfig, temp, I2C_TIMEOUT);
+
+                _i2cBus.ReadRegister(_i2cConfig, commands[i], temp, I2C_TIMEOUT);
+
                 Array.Copy(temp, 0, results, 2 * i, 2);
             }
 
             _calibrationData = new CalibrationData(results);
         }
+
+        private UInt32 ReadRawTemperature()
+        {
+            // Uncorrected Temperature (D2)
+            const byte CONV_SEQ_COMMAND_D2_OSR256 = 0x50;
+            const byte CONV_SEQ_COMMAND_D2_OSR512 = 0x52;
+            const byte CONV_SEQ_COMMAND_D2_OSR1024 = 0x54;
+            const byte CONV_SEQ_COMMAND_D2_OSR2048 = 0x56;
+            const byte CONV_SEQ_COMMAND_D2_OSR4096 = 0x58;
+
+            _i2cBus.Write(_i2cConfig, new byte[] { CONV_SEQ_COMMAND_D2_OSR4096 }, I2C_TIMEOUT);
+            Thread.Sleep(15); // wait for conversion (8.22ms)
+            
+            UInt32 temp = this.ReadAdcValue();
+            if (temp == 0)
+            {
+                throw new InvalidOperationException("Conversion sequence was unsuccessful.");
+            }
+
+            return temp;
+        }
+
+        private UInt32 ReadRawPressure()
+        {
+            // Uncorrected Pressure (D1)
+            const byte CONV_SEQ_COMMAND_D1_OSR256 = 0x50;
+            const byte CONV_SEQ_COMMAND_D1_OSR512 = 0x52;
+            const byte CONV_SEQ_COMMAND_D1_OSR1024 = 0x54;
+            const byte CONV_SEQ_COMMAND_D1_OSR2048 = 0x56;
+            const byte CONV_SEQ_COMMAND_D1_OSR4096 = 0x58;
+
+            _i2cBus.Write(_i2cConfig, new byte[] { CONV_SEQ_COMMAND_D1_OSR4096 }, I2C_TIMEOUT);
+            Thread.Sleep(15); // wait for conversion (8.22ms)
+
+            UInt32 pressure = this.ReadAdcValue();
+            if (pressure == 0)
+            {
+                throw new InvalidOperationException("Conversion sequence was unsuccessful.");
+            }
+
+            return pressure;
+        }
         
         private UInt32 ReadAdcValue()
         {
             const byte ADC_READ_COMMAND = 0x00;
-            _I2CConnector.Write(new byte[] { ADC_READ_COMMAND });
+            _i2cBus.Write(_i2cConfig, new byte[] { ADC_READ_COMMAND }, I2C_TIMEOUT);
 
             byte[] result = new byte[3];
-            _I2CConnector.Read(result);
+            _i2cBus.Read(_i2cConfig, result, I2C_TIMEOUT);
 
             UInt32 value = (UInt32)((result[0] << 16) | (result[1] << 8) | result[0]);
             return value;
@@ -117,6 +164,15 @@ namespace AeroDataLogger.Sensors.Barometer
 
         private struct CalibrationData
         {
+            public ushort FactoryData;
+            public ushort C1_SensT1;
+            public ushort C2_OffT1;
+            public ushort C3_TCS;
+            public ushort C4_TCO;
+            public ushort C5_TRef;
+            public ushort C6_TempSens;
+            public ushort SerialCodeAndCRC;
+
             public CalibrationData(byte[] PromData)
             {
                 if (PromData.Length != 16)
@@ -125,24 +181,14 @@ namespace AeroDataLogger.Sensors.Barometer
                 }
 
                 FactoryData = ToUShort(PromData[0], PromData[1]);
-                SensT1 = ToUShort(PromData[2], PromData[3]);
-                OffT1 = ToUShort(PromData[4], PromData[5]);
-                TCS = ToUShort(PromData[6], PromData[7]);
-                TCO = ToUShort(PromData[8], PromData[9]);
-                TRef = ToUShort(PromData[10], PromData[11]);
-                TempSens = ToUShort(PromData[12], PromData[13]);
+                C1_SensT1 = ToUShort(PromData[2], PromData[3]);
+                C2_OffT1 = ToUShort(PromData[4], PromData[5]);
+                C3_TCS = ToUShort(PromData[6], PromData[7]);
+                C4_TCO = ToUShort(PromData[8], PromData[9]);
+                C5_TRef = ToUShort(PromData[10], PromData[11]);
+                C6_TempSens = ToUShort(PromData[12], PromData[13]);
                 SerialCodeAndCRC = ToUShort(PromData[14], PromData[15]);
             }
-
-            public ushort FactoryData;
-            public ushort SensT1;
-            public ushort OffT1;
-            public ushort TCS;
-            public ushort TCO;
-            public ushort TRef;
-            public ushort TempSens;
-            public ushort SerialCodeAndCRC;
-
 
             private static ushort ToUShort(byte byte1, byte byte2)
             {

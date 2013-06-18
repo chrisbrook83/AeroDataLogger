@@ -1,11 +1,13 @@
 ﻿using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
+using System;
 
 namespace AeroDataLogger.I2C
 {
     /// <summary>
     /// Helper class for working with the I2C bus.
     /// </summary>
+    [Obsolete]
     public class I2CConnector
     {
         private I2CDevice.Configuration _config;

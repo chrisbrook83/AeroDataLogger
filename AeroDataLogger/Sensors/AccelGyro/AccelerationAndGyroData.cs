@@ -78,8 +78,8 @@ namespace AeroDataLogger.Sensors.AccelGyro
             var rZ = ConvertValueToString(ConvertRawValueToUnits(RawGyroZ, (short)_gyroRange), 3, 1);
 
             return "Temp: " + temp + "°C" + 
-                "\tAccel: " + aX + "X\t " + aY + "Y\t " + aZ + "Z" +
-                "\tGyro: " + rX + "X\t " + rY + "Y\t " + rZ + "Z";
+                "\tAccel: " + aX + "X   " + aY + "Y   " + aZ + "Z" +
+                "\tGyro: " + rX + "X   " + rY + "Y   " + rZ + "Z";
         }
 
         /// <summary>
