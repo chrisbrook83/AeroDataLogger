@@ -39,6 +39,7 @@
     <Compile Include="Sensors\AccelGyro\GyroConfig.cs" />
     <Compile Include="Sensors\AccelGyro\MPU6050Device.cs" />
     <Compile Include="Sensors\AccelGyro\MPU6050Registers.cs" />
+    <Compile Include="Sensors\Barometer\MS5611Baro.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.SPOT.Hardware" />
@@ -49,7 +50,9 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Sensors\Barometer\" />
     <Folder Include="Sensors\Magnetometer\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Sensors\Barometer\MS5611-01BA03.pdf" />
   </ItemGroup>
 </Project>
