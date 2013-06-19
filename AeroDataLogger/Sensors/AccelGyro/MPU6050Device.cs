@@ -1,6 +1,7 @@
 using AeroDataLogger.I2C;
 using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
+using System.Threading;
 
 namespace AeroDataLogger.Sensors.AccelGyro
 {
@@ -24,15 +25,18 @@ namespace AeroDataLogger.Sensors.AccelGyro
         public MPU6050Device()
         {
             Debug.Print("Initialising the MPU-6050 Accelerometer and Gyro package...");
-            
+            Thread.Sleep(100);
+
             // PWR_MGMT_1 = Power Management 1 
             // 0xF9 = 11111001: Device Reset=true, Sleep=true, Cycle=true, Temp Sensor=On, Clock Select=PLL with X axis gyroscope reference
             // TODO: Given the reset, half of these values are probably ignored, and the defaults are used instead.
             _I2CBus.WriteRegister(_i2cConfig, MPU6050Registers.PWR_MGMT_1, 0xF9, _timeout);
+            Thread.Sleep(100); // allow to reset
 
             // Exit sleep mode (CARE! Not sure why, but this resets the device too! - only set config after this line)
             // TODO: Figure out what's going on here. Perhaps the reset at the line above was taking some time, hence why the Scale settings (below) were ignored
             _I2CBus.WriteRegister(_i2cConfig, MPU6050Registers.PWR_MGMT_1, 0x01, _timeout);
+            Thread.Sleep(100); // allow to reset
 
             // Gyro Scale
             _gyroRange = GyroConfig.Range.plusMinus0500dps;

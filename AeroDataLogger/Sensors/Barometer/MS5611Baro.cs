@@ -25,42 +25,58 @@ namespace AeroDataLogger.Sensors.Barometer
             Initialise();
         }
 
+        /// <summary>
+        /// Converts the raw register values to the correct units.
+        /// The variable names are consistent with those used in the datasheet (see page 7).
+        /// </summary>
         public void ReadTemperatureAndPressure(out double temp, out double pressure)
         {
             UInt32 D1 = ReadRawPressure();
             UInt32 D2 = ReadRawTemperature();
-            Int32 dT = (Int32)(D2 - ((Int32)_calibrationData.C5_TRef << 8));
+            
+            // Difference between current temperature, and the temperature used during factory calibration
+            Int32 dT = (Int32)D2 - ((Int32)_calibrationData.C5_TRef << 8);
             Debug.Assert(dT >= -16776960 && dT <= 16776960);
-            Int64 OFF = ((Int64)_calibrationData.C2_OffT1 << 16) + ((dT * _calibrationData.C4_TCO) >> 7);
-            Int64 SENS = ((Int32)_calibrationData.C1_SensT1 << 15) + ((dT * _calibrationData.C3_TCS) >> 8);
 
+            // Calculate temperature from raw value using correction coefficient C6 (20deg reference)
             Int64 TEMP = 2000 + ((dT * _calibrationData.C6_TempSens) >> 23);
             Debug.Assert(TEMP >= -4000 && TEMP <= 8500);
 
-            //if (TEMP < 2000)
-            //{
-            //    Int32 T1 = 0;
-            //    Int64 OFF1 = 0;
-            //    Int64 SENS1 = 0;
+            // Correct factory pressure offset (OffT1) using current temperature
+            Int64 OFF = ((Int64)_calibrationData.C2_OffT1 << 16) + (((Int64)dT * _calibrationData.C4_TCO) >> 7);
+            Debug.Assert(OFF >= -8589672450 && OFF <= 12884705280);
 
-            //    T1 = (Int32)(System.Math.Pow(dT, 2) / 2147483648);
-            //    OFF1 = (Int64)(5 * System.Math.Pow((TEMP - 2000), 2) / 2);
-            //    SENS1 = (Int64)(5 * System.Math.Pow((TEMP - 2000), 2) / 4);
+            // Correct factory pressure sensor sensitivity (SensT1) using current temperature
+            Int64 SENS = ((Int64)_calibrationData.C1_SensT1 << 15) + (((Int64)dT * _calibrationData.C3_TCS) >> 8);
+            Debug.Assert(SENS >= -4294836225 && SENS <= 6442352640);
 
-            //    if (TEMP < -1500) // if temperature lower than -15 Celsius 
-            //    {
-            //        OFF1 = (Int64)(OFF1 + 7 * System.Math.Pow((TEMP + 1500), 2));
-            //        SENS1 = (Int64)(SENS1 + 11 * System.Math.Pow((TEMP + 1500), 2) / 2);
-            //    }
+            // Higher order temperature correction
+            if (TEMP < 2000) // if temperature lower than +20 Celsius...
+            {
+                Int32 T1 = 0;
+                Int64 OFF1 = 0;
+                Int64 SENS1 = 0;
 
-            //    TEMP -= T1;
-            //    OFF -= OFF1;
-            //    SENS -= SENS1; 
-            //}
+                T1 = (Int32)System.Math.Pow(dT, 2) >> 31;
+                OFF1 = (Int64)(5 * System.Math.Pow((TEMP - 2000), 2) / 2);
+                SENS1 = (Int64)(5 * System.Math.Pow((TEMP - 2000), 2) / 4);
+
+                if (TEMP < -1500) // if temperature lower than -15 Celsius...
+                {
+                    OFF1 = (Int64)(OFF1 + 7 * System.Math.Pow((TEMP + 1500), 2));
+                    SENS1 = (Int64)(SENS1 + 11 * System.Math.Pow((TEMP + 1500), 2) / 2);
+                }
+
+                TEMP -= T1;
+                OFF -= OFF1;
+                SENS -= SENS1;
+            }
+
+            // Calculate pressure
+            Int32 P = (Int32)((((D1 * SENS) >> 21) - OFF) >> 15);
+            Debug.Assert(1000 <= P && P <= 120000);
 
             temp = (double)TEMP / 100;
-
-            Int64 P = (((D1 * SENS) >> 21) - OFF) >> 15;
             pressure = (double)P / 100;
         }
 
@@ -132,11 +148,11 @@ namespace AeroDataLogger.Sensors.Barometer
         private UInt32 ReadRawPressure()
         {
             // Uncorrected Pressure (D1)
-            const byte CONV_SEQ_COMMAND_D1_OSR256 = 0x50;
-            const byte CONV_SEQ_COMMAND_D1_OSR512 = 0x52;
-            const byte CONV_SEQ_COMMAND_D1_OSR1024 = 0x54;
-            const byte CONV_SEQ_COMMAND_D1_OSR2048 = 0x56;
-            const byte CONV_SEQ_COMMAND_D1_OSR4096 = 0x58;
+            const byte CONV_SEQ_COMMAND_D1_OSR256 = 0x40;
+            const byte CONV_SEQ_COMMAND_D1_OSR512 = 0x42;
+            const byte CONV_SEQ_COMMAND_D1_OSR1024 = 0x44;
+            const byte CONV_SEQ_COMMAND_D1_OSR2048 = 0x46;
+            const byte CONV_SEQ_COMMAND_D1_OSR4096 = 0x48;
 
             _i2cBus.Write(_i2cConfig, new byte[] { CONV_SEQ_COMMAND_D1_OSR4096 }, I2C_TIMEOUT);
             Thread.Sleep(15); // wait for conversion (8.22ms)
