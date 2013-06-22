@@ -60,7 +60,7 @@ namespace AeroDataLogger.Sensors.AccelGyro
             _I2CBus.WriteRegister(_i2cConfig, 0x37, 0x02, 1000);
             data = new byte[] { new byte() };
             _I2CBus.ReadRegister(_i2cConfig, 0x37, data, 1000);
-            Debug.Assert((data[0] & 0x08) == 0x02);
+            Debug.Assert((data[0] & 0x02) == 0x02);
 
             Debug.Print("Done");
         }
