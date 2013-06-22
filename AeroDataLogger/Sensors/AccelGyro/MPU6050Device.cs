@@ -1,7 +1,7 @@
+using System.Threading;
 using AeroDataLogger.I2C;
 using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
-using System.Threading;
 
 namespace AeroDataLogger.Sensors.AccelGyro
 {
@@ -27,6 +27,11 @@ namespace AeroDataLogger.Sensors.AccelGyro
             Debug.Print("Initialising the MPU-6050 Accelerometer and Gyro package...");
             Thread.Sleep(100);
 
+            // Check connectivity
+            byte[] data = new byte[] { new byte() };
+            _I2CBus.ReadRegister(_i2cConfig, MPU6050Registers.WHO_AM_I, data, 1000);
+            Debug.Assert((data[0] & 0x68) == 0x68);
+
             // PWR_MGMT_1 = Power Management 1 
             // 0xF9 = 11111001: Device Reset=true, Sleep=true, Cycle=true, Temp Sensor=On, Clock Select=PLL with X axis gyroscope reference
             // TODO: Given the reset, half of these values are probably ignored, and the defaults are used instead.
@@ -45,6 +50,17 @@ namespace AeroDataLogger.Sensors.AccelGyro
             // Accelerometer Scale
             _accelRange = AccelConfig.Range.plusMinus08G;
             _I2CBus.WriteRegister(_i2cConfig, MPU6050Registers.ACCEL_CONFIG, AccelConfig.Build(_accelRange), _timeout);
+
+            // Confirm I2C_MST_EN is disabled (required to connect to the HMC5883L)
+            data = new byte[] { new byte() };
+            _I2CBus.ReadRegister(_i2cConfig, 0x6A, data, 1000);
+            Debug.Assert((data[0] & 0x10) == 0);
+
+            // Turn on I2C Bypass (required to connect to the HMC5883L)
+            _I2CBus.WriteRegister(_i2cConfig, 0x37, 0x02, 1000);
+            data = new byte[] { new byte() };
+            _I2CBus.ReadRegister(_i2cConfig, 0x37, data, 1000);
+            Debug.Assert((data[0] & 0x08) == 0x02);
 
             Debug.Print("Done");
         }
