@@ -55,6 +55,10 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <None Include="Sensors\AccelGyro\MPU-6000A-DataSheet.pdf" />
+    <None Include="Sensors\AccelGyro\MPU-6000A-RegisterMap.pdf" />
     <None Include="Sensors\Barometer\MS5611-01BA03.pdf" />
+    <None Include="Sensors\imu-10dof-mpu6050-hmc5883-ms5611.PDF" />
+    <None Include="Sensors\Magnetometer\HMC5883L.pdf" />
   </ItemGroup>
 </Project>

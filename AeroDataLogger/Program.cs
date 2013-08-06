@@ -46,7 +46,7 @@ namespace AeroDataLogger
                     + "\tT: " + temp.ToString("f2") + "\tP: " + pressure.ToString("f2") 
                     + "\tMx=" + rawMagnetrometry.X + " My= " + rawMagnetrometry.Y + " Mz= " + rawMagnetrometry.Z);
 
-                Thread.Sleep(200);
+                Thread.Sleep(100);
             }
         }
     }
