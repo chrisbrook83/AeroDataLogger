@@ -28,17 +28,30 @@ namespace Wpf3DTest {
         private Point _lastMousePosition;
         private Model3DGroup _modelGeometry;
 
+        private RotateTransform3D _initialModelTransform = new RotateTransform3D(new QuaternionRotation3D(new Quaternion(new Vector3D(1, 0, 0), -90)));
+
         public MainWindow()
         {
             InitializeComponent();
-
             AttachModel();
+            InitialiseScene();
+        }
+
+        private void InitialiseScene()
+        {
+            _modelGeometry.Transform = new Transform3DGroup();
+            ((Transform3DGroup)_modelGeometry.Transform).Children.Add(_initialModelTransform);
+            _camera.Position = new Point3D(0, 0, 15);
         }
 
         private void AttachModel()
         {
+            // http://helixtoolkit.codeplex.com/
             var importer = new ModelImporter();
+            
+            // http://animium.com/2012/06/pitts-special-aircraft-3d-model/
             string modelFile = @".\Models\Pitts Special.3ds";
+            
             _modelGeometry = importer.Load(modelFile);
             _modelGeometry.Transform = new Transform3DGroup();
             _model3dGroup.Children.Add(_modelGeometry);
@@ -46,14 +59,17 @@ namespace Wpf3DTest {
 
         private void Grid_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            camera.Position = new Point3D(camera.Position.X, camera.Position.Y, camera.Position.Z - e.Delta / 250D);
+            _camera.Position = new Point3D(_camera.Position.X, _camera.Position.Y, _camera.Position.Z - e.Delta / 150D);
         }
 
-        private void Reset_Click(object sender, RoutedEventArgs e)
+        private void SetZoom(double cameraZ)
         {
-            throw new NotImplementedException("Don't click this! :)");
-            //camera.Position = new Point3D(camera.Position.X, camera.Position.Y, 5);
-            //_mGeometry.Transform = new Transform3DGroup();
+            _camera.Position = new Point3D(_camera.Position.X, _camera.Position.Y, cameraZ);
+        }
+
+        private void ResetBtn_Click(object sender, RoutedEventArgs e)
+        {
+            InitialiseScene();
         }
 
         private void Grid_MouseMove(object sender, MouseEventArgs e)
