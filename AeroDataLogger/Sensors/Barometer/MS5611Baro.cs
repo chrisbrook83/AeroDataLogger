@@ -3,6 +3,7 @@ using Microsoft.SPOT;
 using AeroDataLogger.I2C;
 using System.Threading;
 using Microsoft.SPOT.Hardware;
+using AeroDataLogger.Logging;
 
 namespace AeroDataLogger.Sensors.Barometer
 {
@@ -22,7 +23,9 @@ namespace AeroDataLogger.Sensors.Barometer
 
         public MS5611Baro()
         {
+            Log.WriteLine("Initialising the MS5611 barometric sensor...");
             Initialise();
+            Log.WriteLine("MS5611 Ready\n");
         }
 
         /// <summary>

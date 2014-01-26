@@ -3,6 +3,7 @@ using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
 using AeroDataLogger.I2C;
 using System.Threading;
+using AeroDataLogger.Logging;
 
 namespace AeroDataLogger.Sensors.Magnetometer
 {
@@ -39,10 +40,12 @@ namespace AeroDataLogger.Sensors.Magnetometer
         {
             // WARNING: Because this chip is connected as a slave of the MPU-6050, that device 
             // must be configured properly for this device to be visible on the I2C bus.
+            Log.WriteLine("Initialising the HMC5883L magnetometer...");
             Thread.Sleep(100);
             this.IsConnected();
             this.SetScale(1.3);
             this.SetContinuous();
+            Log.WriteLine("HMC5883L Ready\n");
         }
 
         public bool IsConnected()

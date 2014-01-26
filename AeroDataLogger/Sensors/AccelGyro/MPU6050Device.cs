@@ -2,6 +2,7 @@ using System.Threading;
 using AeroDataLogger.I2C;
 using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
+using AeroDataLogger.Logging;
 
 namespace AeroDataLogger.Sensors.AccelGyro
 {
@@ -24,7 +25,7 @@ namespace AeroDataLogger.Sensors.AccelGyro
         
         public MPU6050Device()
         {
-            Debug.Print("Initialising the MPU-6050 Accelerometer and Gyro package...");
+            Log.WriteLine("Initialising the MPU-6050 accelerometer and gyro package...");
             Thread.Sleep(100);
 
             // Check connectivity
@@ -62,7 +63,7 @@ namespace AeroDataLogger.Sensors.AccelGyro
             _I2CBus.ReadRegister(_i2cConfig, 0x37, data, 1000);
             Debug.Assert((data[0] & 0x02) == 0x02);
 
-            Debug.Print("Done");
+            Log.WriteLine("MPU-6050 Ready\n");
         }
 
         /// <summary>
@@ -94,7 +95,8 @@ namespace AeroDataLogger.Sensors.AccelGyro
             //_I2C.Read(registerList);
             _I2CBus.Read(_i2cConfig, registerList, _timeout);
 
-            return new AccelerationAndGyroData(registerList, _gyroRange, _accelRange);
+            var result = AccelerationAndGyroDataBuilder.Build(registerList, _gyroRange, _accelRange);
+            return result;
         }
     }
 }

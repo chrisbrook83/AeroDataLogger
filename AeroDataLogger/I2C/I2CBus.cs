@@ -61,7 +61,12 @@ namespace AeroDataLogger.I2C
                 };
             
                 // the i2c data is sent here to the device.
-                int transferred = _slaveDevice.Execute(writeXAction, transactionTimeout);
+                int transferred = 0;
+                do
+                {
+                    transferred = _slaveDevice.Execute(writeXAction, transactionTimeout);
+                }
+                while (transferred == 0);
 
                 // make sure the data was sent.
                 if (transferred != writeBuffer.Length)
