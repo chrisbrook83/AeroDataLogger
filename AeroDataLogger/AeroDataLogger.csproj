@@ -31,11 +31,14 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
+    <Compile Include="Data\DataHandler.cs" />
+    <Compile Include="Data\Sinks\DebuggerDataSink.cs" />
+    <Compile Include="Data\Sinks\FileDataSink.cs" />
+    <Compile Include="Data\Sinks\IDataSink.cs" />
     <Compile Include="I2C\I2CBus.cs" />
     <Compile Include="Logging\Log.cs" />
-    <Compile Include="Logging\TextFileWriter.cs" />
-    <Compile Include="Output\RS232DataHandler.cs" />
     <Compile Include="Output\RS232Writer.cs" />
+    <Compile Include="Output\TextFileWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Sensors\AccelGyro\AccelConfig.cs" />

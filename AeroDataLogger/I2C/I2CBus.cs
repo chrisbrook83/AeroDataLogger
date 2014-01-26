@@ -1,6 +1,8 @@
 using System;
 using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
+using AeroDataLogger.Output;
+using System.Threading;
 
 namespace AeroDataLogger.I2C
 {
@@ -16,6 +18,17 @@ namespace AeroDataLogger.I2C
         private static I2CBus _instance = null;
         private static readonly object LockObject = new object();
 
+        private readonly I2CDevice _slaveDevice;
+
+        public static void DestroySingleton()
+        {
+            lock (LockObject)
+            {
+                _instance.Dispose();
+                _instance = null;
+            }
+        }
+        
         public static I2CBus GetInstance()
         {
             lock (LockObject)
@@ -29,11 +42,9 @@ namespace AeroDataLogger.I2C
             }
         }
 
-        private I2CDevice _slaveDevice;
-
         private I2CBus()
         {
-            this._slaveDevice = new I2CDevice(new I2CDevice.Configuration(0, 0));
+            this._slaveDevice = new I2CDevice(null);
         }
 
         public void Dispose()
@@ -59,12 +70,17 @@ namespace AeroDataLogger.I2C
                 { 
                     I2CDevice.CreateWriteTransaction(writeBuffer) 
                 };
-            
+
                 // the i2c data is sent here to the device.
                 int transferred = 0;
                 do
                 {
                     transferred = _slaveDevice.Execute(writeXAction, transactionTimeout);
+
+                    if (transferred == 0)
+                    {
+                        throw new Exception("Could not write to device.");
+                    }
                 }
                 while (transferred == 0);
 

@@ -3,7 +3,7 @@ using Microsoft.SPOT;
 using Microsoft.SPOT.Hardware;
 using AeroDataLogger.I2C;
 using System.Threading;
-using AeroDataLogger.Logging;
+using AeroDataLogger.Output;
 
 namespace AeroDataLogger.Sensors.Magnetometer
 {

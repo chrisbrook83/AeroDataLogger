@@ -6,7 +6,7 @@ using SecretLabs.NETMF.Hardware.NetduinoPlus;
 
 namespace AeroDataLogger.Output
 {
-    internal class RS232Writer : StreamWriter
+    internal class RS232Writer : StreamWriter, ILogSink 
     {
         private static Stream GetSerialPort()
         {
@@ -18,6 +18,11 @@ namespace AeroDataLogger.Output
         public RS232Writer()
             : base(GetSerialPort())
         {
+        }
+
+        void ILogSink.WriteLine(string value)
+        {
+            StreamWriterExtensions.WriteAndFlushLine(this, value);
         }
 
         protected override void Dispose(bool disposing)

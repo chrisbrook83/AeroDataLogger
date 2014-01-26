@@ -9,7 +9,8 @@ using AeroDataLogger.Sensors.Barometer;
 using AeroDataLogger.Sensors.Magnetometer;
 using Microsoft.SPOT;
 using AeroDataLogger.Output;
-using AeroDataLogger.Logging;
+using AeroDataLogger.Data;
+using System;
 
 namespace AeroDataLogger
 {
@@ -17,17 +18,24 @@ namespace AeroDataLogger
     {
         public static void Main()
         {
-            Run();
+            try
+            {
+                Run();
+            }
+            catch (System.Exception ex)
+            {
+                Log.WriteLine("UNHANDLED EXCEPTION! " + ex);
+                Log.WriteLine("Stack Trace: " + ex.StackTrace);
+            }
         }
-
-        private delegate void DataAvailableHandler(object sender, DataAvailableHandlerEventArgs args);
-
-        private static event DataAvailableHandler DataAvailable = delegate { };
 
         private static void Run()
         {
-            Log.WriteLine("\n--- AeroDataLogger Startup ---");
-            Thread.Sleep(2000);
+            Log.WriteLine("\n--- Logging Initialisation ---");
+            Log.AttachLogSink(new RS232Writer());
+            Log.AttachLogSink(new TextFileWriter("Logs", "Log"));
+
+            Log.WriteLine("\n--- AeroDataLogger: Boot Sequence Start ---");
 
             MPU6050Device mpu6050 = new MPU6050Device();  // initalise this before the compass!
             MS5611Baro baro = new MS5611Baro();
@@ -40,42 +48,35 @@ namespace AeroDataLogger
             double temp = 0;
             double pressure = 0;
 
-            using (TextFileWriter dataLog = new TextFileWriter("Data", "Raw"))
+            var dataSinks = new IDataSink[] { new FileDataSink(), new DebuggerDataSink() };
+            DataHandler dataHandler = new DataHandler(dataSinks);
+
+            Log.WriteLine("Starting data capture...");
+            dataHandler.WriteHeader(new [] { "Ax", "Ay", "Az", "Rx", "Ry", "Rz", "Mx", "My", "Mz", "P" });
+
+            while (true)
             {
-                Log.WriteLine("Starting data capture...");
+                // Gather data from sensors
+                inertialResult = mpu6050.GetSensorData();
+                baro.ReadTemperatureAndPressure(out temp, out pressure);
+                rawMagnetrometry = compass.Raw;
 
-                // Write header
-                dataLog.WriteLine("Ax\tAy\tAz\tRx\tRy\tRz\tMx\tMy\tMz\tP");
-
-                while (true)
+                // Emit data to handlers
+                dataHandler.HandleData(new object[] 
                 {
-                    inertialResult = mpu6050.GetSensorData();
-                    baro.ReadTemperatureAndPressure(out temp, out pressure);
-                    rawMagnetrometry = compass.Raw;
+                    inertialResult.Ax,
+                    inertialResult.Ay,
+                    inertialResult.Az,
+                    inertialResult.Rx,
+                    inertialResult.Ry,
+                    inertialResult.Rz,
+                    rawMagnetrometry.X,
+                    rawMagnetrometry.Y,
+                    rawMagnetrometry.Z,
+                    pressure
+                });
 
-                    string message = inertialResult.ToString()
-                        + "\tT: " + temp.ToString("f2") + "\tP: " + pressure.ToString("f2")
-                        + "\tMx=" + rawMagnetrometry.X + " My= " + rawMagnetrometry.Y + " Mz= " + rawMagnetrometry.Z + "\n";
-
-                    DataAvailable(null, new DataAvailableHandlerEventArgs(message));
-
-                    Debug.Print(message);
-                    dataLog.Write(new object[] 
-                    {
-                        inertialResult.Ax,
-                        inertialResult.Ay,
-                        inertialResult.Az,
-                        inertialResult.Rx,
-                        inertialResult.Ry,
-                        inertialResult.Rz,
-                        rawMagnetrometry.X,
-                        rawMagnetrometry.Y,
-                        rawMagnetrometry.Z,
-                        pressure
-                    });
-
-                    Thread.Sleep(100);
-                }
+                Thread.Sleep(100);
             }
         }
     }
