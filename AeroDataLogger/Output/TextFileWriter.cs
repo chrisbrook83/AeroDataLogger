@@ -60,6 +60,11 @@ namespace AeroDataLogger.Output
             }
         }
 
+        public void TryDispose()
+        {
+            this.Dispose();
+        }
+
         private void OnMediaInsert(object sender, MediaEventArgs e)
         {
             Log.WriteLine("SD card inserted. Re-initialising file writer.");
@@ -172,8 +177,17 @@ namespace AeroDataLogger.Output
 
         public void Dispose()
         {
-            if (_writer != null) _writer.Dispose();
-            if (_filestream != null) _filestream.Dispose();
+            if (_writer != null)
+            {
+                _writer.Close();
+                _writer.Dispose();
+            }
+
+            if (_filestream != null)
+            {
+                _filestream.Close();
+                _filestream.Dispose();
+            }
         }
     }
 }

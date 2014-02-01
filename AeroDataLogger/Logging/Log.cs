@@ -8,6 +8,7 @@ namespace AeroDataLogger.Output
     internal interface ILogSink
     {
         void WriteLine(string value);
+        void TryDispose();
     }
 
     internal static class Log
@@ -40,6 +41,14 @@ namespace AeroDataLogger.Output
                 {
                     sink.WriteLine(value);
                 }
+            }
+        }
+
+        public static void Close()
+        {
+            foreach (ILogSink sink in _sinks)
+            {
+                sink.TryDispose();
             }
         }
     }

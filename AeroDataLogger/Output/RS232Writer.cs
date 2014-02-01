@@ -25,6 +25,11 @@ namespace AeroDataLogger.Output
             StreamWriterExtensions.WriteAndFlushLine(this, value);
         }
 
+        public void TryDispose()
+        {
+            this.Dispose(true);
+        }
+
         protected override void Dispose(bool disposing)
         {
             // Dispose SerialPort
