@@ -29,6 +29,25 @@ namespace AeroDataLogger.Output
             }
         }
 
+        public static void DetachLogSink(ILogSink sink)
+        {
+            lock (_lock)
+            {
+                // Remove from array
+                ILogSink[] newSinks = new ILogSink[_sinks.Length - 1];
+                for (int i = 0, j = 0; i < _sinks.Length; i++)
+                {
+                    if (_sinks[i] != sink)
+                    {
+                        newSinks[j] = _sinks[i];
+                        j++;
+                    }
+                }
+                
+                _sinks = newSinks;
+            }
+        }
+
         public static void WriteLine(string value)
         {
             // Assume these are already thread-safe
@@ -48,6 +67,7 @@ namespace AeroDataLogger.Output
         {
             foreach (ILogSink sink in _sinks)
             {
+                DetachLogSink(sink);
                 sink.TryDispose();
             }
         }

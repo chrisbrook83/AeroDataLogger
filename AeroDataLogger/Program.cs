@@ -18,12 +18,6 @@ namespace AeroDataLogger
 {
     public class Program
     {
-        /*
-         TODO
-         * Glitch on status button
-         * Data files not being written / saved properly (keeps using same file)
-         */
-
         public static void Main()
         {
             try
@@ -49,10 +43,13 @@ namespace AeroDataLogger
             MS5611Baro baro = new MS5611Baro();
             HMC5883L compass = new HMC5883L();
 
+            // Wait for user to start the recording...
+            var controller = new Controller();
             Log.WriteLine("Initialisation successful! Waiting to begin recording...\n");
-            Controller.SignalReady();
-            while (!Controller.Recording) { Thread.Sleep(100); };
+            controller.NotifyReady();
+            while (!controller.Recording) { Thread.Sleep(100); };
 
+            // Recording begins...
             Log.WriteLine("Starting data capture.");
             AccelerationAndGyroData inertialResult;
             RawData rawMagnetrometry;
@@ -65,7 +62,7 @@ namespace AeroDataLogger
                 DataHandler dataHandler = new DataHandler(dataSinks);
                 dataHandler.WriteHeader(new[] { "Ax", "Ay", "Az", "Rx", "Ry", "Rz", "Mx", "My", "Mz", "P" });
 
-                while (Controller.Recording)
+                while (controller.Recording)
                 {
                     // Gather data from sensors
                     inertialResult = mpu6050.GetSensorData();
@@ -94,51 +91,8 @@ namespace AeroDataLogger
             Log.WriteLine("Data capture stopped.");
             Log.WriteLine("Exiting.\n\n");
             Log.Close();
-        }
-
-        private static class Controller
-        {
-            private static InterruptPort _button;
-
-            private static bool _ready;
-
-            public static bool Recording { get; private set; }
-
-            static Controller()
-            {
-                _button = new InterruptPort(Pins.GPIO_PIN_D7, false, Port.ResistorMode.PullUp, Port.InterruptMode.InterruptEdgeHigh);
-                _button.OnInterrupt += new NativeEventHandler(button_OnInterrupt);
-                _ready = false;
-                Recording = false; 
-                StatusLed.Off();
-            }
-
-            public static void SignalReady()
-            {
-                StatusLed.On();
-                _ready = true;
-            }
-
-            private static void button_OnInterrupt(uint data1, uint data2, DateTime time)
-            {
-                _button.Interrupt = Port.InterruptMode.InterruptNone;
-
-                if (_ready)
-                {
-                    Recording = !Recording;
-                    if (Recording)
-                    {
-                        StatusLed.Flash();
-                    }
-                    else
-                    { 
-                        StatusLed.Off();
-                    }
-
-                    Thread.Sleep(100); // glitch filtering
-                    _button.Interrupt = Port.InterruptMode.InterruptEdgeHigh;
-                }
-            }
+            
+            
         }
     }
 }

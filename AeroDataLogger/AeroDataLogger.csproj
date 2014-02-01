@@ -31,6 +31,7 @@
   </PropertyGroup>
   <Import Project="$(NetMfTargetsBaseDir)$(TargetFrameworkVersion)\CSharp.Targets" />
   <ItemGroup>
+    <Compile Include="Controller.cs" />
     <Compile Include="Data\DataHandler.cs" />
     <Compile Include="Data\Sinks\DebuggerDataSink.cs" />
     <Compile Include="Data\Sinks\FileDataSink.cs" />

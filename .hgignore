@@ -35,3 +35,4 @@ packages/**
 *.resharper
 *.ncrunch*
 *.ndproj
+Viewer/

@@ -9,6 +9,7 @@ namespace AeroDataLogger.Output
     internal class TextFileWriter : IDisposable, ILogSink
     {
         private const string VOLUME_LABEL = "SD";
+        private const string FileRootFolder = "AeroDataLogger";
 
         private FileStream _filestream;
         private TextWriter _writer;
@@ -22,7 +23,7 @@ namespace AeroDataLogger.Output
 
         public TextFileWriter(string folder, string filePrefix)
         {
-            _destinationFolder = @"\" + VOLUME_LABEL + @"\" + folder + @"\";
+            _destinationFolder = @"\" + VOLUME_LABEL + @"\" + FileRootFolder + @"\" + folder + @"\";
             _filePrefix = filePrefix;
 
             // TODO: these are tricky - is Insert called during boot if the card is already in?
@@ -45,7 +46,7 @@ namespace AeroDataLogger.Output
 
                 if (IsSDCardPresent())
                 {
-                    _logFilePath = GetNextLogFilename(_destinationFolder, _filePrefix);
+                    _logFilePath = GetNextFilename(_destinationFolder, _filePrefix);
                     Log.WriteLine("Creating file: '" + _logFilePath + "'.");
                     _filestream = new FileStream(_logFilePath, FileMode.Create, FileAccess.Write);
                     _writer = new StreamWriter(_filestream);
@@ -118,15 +119,15 @@ namespace AeroDataLogger.Output
                 _writer.WriteLine(value);
 
                 // TODO: There is a significant performance overhead for doing this on every call...
-                _writer.Flush();
-                _filestream.Flush();
+                //_writer.Flush();
+                //_filestream.Flush();
             }
         }
 
-        private string GetNextLogFilename(string logFolder, string filePrefix)
+        private string GetNextFilename(string logFolder, string filePrefix)
         {
-            // Note: log filename format: "<filePrefix>_<int>.txt"
-            string nextLogFilename = null;
+            // Note: filename format: "<filePrefix>_<int>.txt"
+            string nextFilename = null;
             DirectoryInfo di = new DirectoryInfo(logFolder);
 
             if (!di.Exists)
@@ -156,9 +157,9 @@ namespace AeroDataLogger.Output
 
             const int BASE_LOG_INDEX = 10000;
             int nextLogIndex = maxLogIndex == -1 ? BASE_LOG_INDEX : (maxLogIndex + 1);
-            nextLogFilename = logFolder + filePrefix + "_" + nextLogIndex.ToString() + ".txt";
+            nextFilename = logFolder + filePrefix + "_" + nextLogIndex.ToString() + ".txt";
 
-            return nextLogFilename;
+            return nextFilename;
         }
 
         private bool IsSDCardPresent() 
@@ -177,16 +178,21 @@ namespace AeroDataLogger.Output
 
         public void Dispose()
         {
-            if (_writer != null)
+            if (_writer != null && _filestream != null)
             {
+                _writer.Flush();
+                _filestream.Flush();
+
                 _writer.Close();
+                _filestream.Close();
+
                 _writer.Dispose();
+                _filestream.Dispose();
             }
 
-            if (_filestream != null)
+            if (IsSDCardPresent())
             {
-                _filestream.Close();
-                _filestream.Dispose();
+                new Microsoft.SPOT.IO.VolumeInfo(VOLUME_LABEL).FlushAll();
             }
         }
     }
