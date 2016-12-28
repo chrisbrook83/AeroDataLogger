@@ -2,9 +2,9 @@
 This project is an airborne data logger based on the following hardware setup:
 * Netduino Plus 2
 * Drotek 10 DoF IMU
-** MPU6050 gyro and accelerometer
-** HMC5983 magnetometer
-** MS5611 altimeter
+  * MPU6050 gyro and accelerometer
+  * HMC5983 magnetometer
+  * MS5611 altimeter
 * SPK-GS407A GPS
 
 ## Prerequisites
